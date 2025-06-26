@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ document.filename }}{% endblock %}
+{% block body %}
+<div class="container mt-4">
+    <h2 style="word-wrap: break-word; white-space: normal; overflow-wrap: break-word;">{{ document.filename }}</h2>
+    <p><strong>Категория:</strong> {{ document.category.name if document.category else 'Без категории' }}</p>
+    <p><strong>Загрузил:</strong> {{ document.user.fio if document.user else 'Неизвестно' }}</p>
+    <p><strong>Дата загрузки:</strong> {{ document.date_added.strftime('%d.%m.%Y %H:%M') if document.date_added else 'Не указана' }}</p>
+    <hr>
+    <h4>Текст документа</h4>
+    <pre style="white-space: pre-wrap; word-wrap: break-word;">{{ document.text }}</pre>
+    <a href="{{ url_for('main.documents_list') }}" class="btn btn-secondary mt-3">Назад к списку</a>
+</div>
+{% endblock %}

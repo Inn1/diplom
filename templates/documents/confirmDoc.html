@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block body %}
+<h2 class="mb-4">Редактирование текста документа</h2>
+
+<form id="docForm" method="POST" class="mb-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="force_add" id="forceAdd" value="">
+
+    <div class="mb-3">
+        <label for="category" class="form-label">Категория:</label>
+        <select name="category" id="category" class="form-select" required>
+            <option value="" disabled {% if not selected_category %}selected{% endif %}>Выберите категорию</option>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div>
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'secondary' }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="mb-3">
+        <label for="text" class="form-label">Текст документа:</label>
+        <textarea name="text" id="text" rows="15" class="form-control">{{ text }}</textarea>
+    </div>
+
+    <button type="submit" class="btn btn-dark">Сохранить</button>
+</form>
+
+<!-- Модальное окно Bootstrap -->
+{% if show_modal %}
+<div class="modal fade show" id="similarDocsModal" tabindex="-1" aria-labelledby="similarDocsModalLabel" style="display:block; background:rgba(0,0,0,0.5);" aria-modal="true" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="similarDocsModalLabel">Внимание!</h5>
+        <button type="button" class="btn-close" id="modalCloseBtn" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <p>{{ warning }}</p>
+        <ul>
+          {% for doc in similar_docs %}
+            <li>{{ doc.filename }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" id="confirmAddBtn">Добавить документ</button>
+        <button type="button" class="btn btn-secondary" id="cancelAddBtn">Отмена</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Закрытие модального окна
+    document.getElementById('modalCloseBtn').onclick = closeModal;
+    document.getElementById('cancelAddBtn').onclick = closeModal;
+
+    function closeModal() {
+        const modal = document.getElementById('similarDocsModal');
+        modal.style.display = 'none';
+    }
+
+    // Подтверждение добавления
+    document.getElementById('confirmAddBtn').onclick = function() {
+        document.getElementById('forceAdd').value = '1';
+        document.getElementById('docForm').submit();
+    };
+});
+</script>
+{% endif %}
+
+{% endblock %}

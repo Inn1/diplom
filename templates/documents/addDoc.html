@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{%block title%} ДОБАВЛЕНИЕ {%endblock %}
+{%block body%}
+<h2 class="mb-4">Загрузите документ</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div>
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<form method="post" enctype="multipart/form-data" class="mb-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="mb-3">
+    <label for="image_file" class="form-label">Выберите файл</label>
+    <input 
+      type="file" 
+      class="form-control" 
+      id="image_file" 
+      name="file" 
+      accept="image/*,application/pdf"
+      placeholder="Загрузите изображение или PDF"
+      title="Загрузите изображение или PDF-файл для распознавания текста"
+      required
+    >
+  </div>
+
+  <button type="submit" name="action" value="recognize" class="btn btn-dark">Загрузить</button>
+</form>
+
+  
+{%endblock%}

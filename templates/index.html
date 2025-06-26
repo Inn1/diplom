@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Список документов{% endblock %}
+
+{% block body %}
+
+<div class="header-full-bg">
+  <div class="container py-5">
+    <h1 class="text-white fw-bold mb-4" style="font-size: 3rem; text-shadow: 2px 2px 8px rgba(0,0,0,0.5); font-family: Arial, sans-serif;">
+      Список документов
+    </h1>
+
+    <form method="GET" action="{{ url_for('main.index') }}">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-4">
+          <input type="text" name="q" class="form-control" placeholder="Поиск по названию или тексту" value="{{ request.args.get('q', '') }}">
+        </div>
+        <div class="col-md-3">
+          <select name="category_id" class="form-select">
+            <option value="">Все категории</option>
+            {% for cat in categories %}
+              <option value="{{ cat.id }}" {% if request.args.get('category_id') == cat.id|string %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <input type="date" name="date_from" class="form-control" value="{{ request.args.get('date_from', '') }}" placeholder="Дата с">
+        </div>
+        <div class="col-md-2">
+          <input type="date" name="date_to" class="form-control" value="{{ request.args.get('date_to', '') }}" placeholder="Дата по">
+        </div>
+        <div class="col-md-1 d-grid">
+          <button type="submit" class="btn btn-danger">Поиск</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="container mt-4">
+  {% if documents %}
+    <div class="list-group" style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
+      {% for doc in documents %}
+        <div class="list-group-item d-flex justify-content-between align-items-start"
+             style="cursor: pointer; border-bottom: 1px solid #ddd;"
+             onclick="if(event.target.tagName !== 'A' && event.target.tagName !== 'BUTTON' && !event.target.closest('a') && !event.target.closest('button')) { window.location='{{ url_for('main.document_detail', document_id=doc.id) }}'; }">
+
+          <!-- Левая часть с текстом, занимает всё доступное пространство -->
+          <div class="doc-text flex-grow-1 me-3" style="min-width: 0;">
+            <h5 class="mb-1 text-truncate" style="color: #E30613;">
+              {{ doc.filename }}
+            </h5>
+            <small class="text-muted d-block">{{ doc.date_added.strftime('%d.%m.%Y %H:%M') if doc.date_added else '' }}</small>
+            <p class="mb-1 text-dark" style="white-space: normal; word-break: break-word;">
+              {{ doc.text[:200] }}{% if doc.text|length > 200 %}...{% endif %}
+            </p>
+            <small class="text-secondary">
+              Категория: {{ doc.category.name if doc.category else 'Без категории' }} | Загрузил: {{ doc.user.fio if doc.user else 'Неизвестно' }}
+            </small>
+            <br>
+            <a href="{{ url_for('main.document_history', document_id=doc.id) }}" style="color: gray; text-decoration: underline;">
+              Посмотреть историю изменений
+            </a>
+          </div>
+
+          <!-- Правая часть с кнопками, фиксированной ширины -->
+          <div class="doc-buttons d-flex flex-column align-items-stretch" style="width: 140px; flex-shrink: 0;">
+            <a href="{{ url_for('main.uploaded_file', filename=doc.filename) }}" target="_blank" class="btn btn-outline-danger btn-sm mb-2 text-truncate" style="width: 100%;">
+              Открыть документ
+            </a>
+
+            {% if current_user.role.name == 'admin' %}
+              <a href="{{ url_for('main.edit_document', document_id=doc.id) }}" class="btn btn-secondary btn-sm mb-2 text-truncate" style="width: 100%;">
+                Редактировать
+              </a>
+            {% endif %}
+
+            {% if current_user.role.name == 'admin' or current_user.user_id == doc.user_id %}
+              <form id="delete-form-{{ doc.id }}" method="POST" action="{{ url_for('main.delete_document', document_id=doc.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="button" class="btn btn-danger btn-sm text-truncate" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal-{{ doc.id }}" style="width: 100%;">
+                  Удалить
+                </button>
+              </form>
+
+              <div class="modal fade" id="confirmDeleteModal-{{ doc.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel-{{ doc.id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="confirmDeleteLabel-{{ doc.id }}">Подтверждение удаления</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body">
+                      Вы действительно хотите удалить этот документ?
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-danger" onclick="document.getElementById('delete-form-{{ doc.id }}').submit();">Удалить</button>
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>Документов нет</p>
+  {% endif %}
+</div>
+
+{% if documents and total_pages > 1 %}
+<nav aria-label="Navigation" class="my-4">
+  <ul class="pagination justify-content-center">
+    <li class="page-item {% if page == 1 %}disabled{% endif %}">
+      <a class="page-link" href="{{ url_for('main.index', page=page-1) }}" tabindex="-1">Предыдущая</a>
+    </li>
+
+    {% for p in range(1, total_pages + 1) %}
+      <li class="page-item {% if p == page %}active{% endif %}">
+        <a class="page-link {% if p == page %}bg-danger text-white{% else %}text-dark{% endif %}" href="{{ url_for('main.index', page=p) }}">{{ p }}</a>
+      </li>
+    {% endfor %}
+
+    <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+      <a class="page-link" href="{{ url_for('main.index', page=page+1) }}">Следующая</a>
+    </li>
+  </ul>
+</nav>
+{% endif %}
+
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+  }
+
+  .header-full-bg {
+    width: 100%;
+    background-image: url("{{ url_for('static', filename='img/index.jpg') }}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 320px;
+    display: flex;
+    align-items: center;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    box-sizing: border-box;
+  }
+
+  .list-group-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    /* flex-wrap: nowrap; - не нужно, чтобы кнопки не переносились */
+  }
+
+  .doc-text {
+    flex-grow: 1;
+    min-width: 0; /* важно для корректного сжатия текста */
+    margin-right: 1rem;
+  }
+
+  .doc-text h5 {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .doc-text p {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .doc-buttons {
+    width: 140px; /* фиксированная ширина для всех кнопок */
+    flex-shrink: 0; /* не сжимать */
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem; /* расстояние между кнопками */
+  }
+
+  .doc-buttons .btn {
+    width: 100%; /* кнопки занимают всю ширину блока */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>
+
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Редактирование документа{% endblock %}
+{% block body %}
+<div class="container mt-4">
+    <h1>Редактирование документа</h1>
+    <form method="POST" action="{{ url_for('main.edit_document', document_id=doc.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+            <label for="filename" class="form-label">Имя файла</label>
+            <input type="text" class="form-control" id="filename" name="filename" value="{{ doc.filename }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="text" class="form-label">Текст</label>
+            <textarea class="form-control" id="text" name="text" rows="5">{{ doc.text }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="category_id" class="form-label">Категория</label>
+            <select class="form-select" id="category_id" name="category_id">
+                <option value="" {% if not doc.category_id %}selected{% endif %}>Без категории</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if doc.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <a href="{{ url_for('main.document_detail', document_id=doc.id) }}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}

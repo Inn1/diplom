@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}История изменений документа: {{ document.filename }}{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <h1 class="mb-4" style="color: #E30613;">История изменений документа: {{ document.filename }}</h1>
+
+    {% if history %}
+        <div class="list-group" style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
+            {% for entry in history %}
+                <div class="list-group-item" style="border-bottom: 1px solid #ddd;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ entry.changed_at.strftime('%d.%m.%Y %H:%M') }}</strong> — 
+                            <span>{{ entry.user.fio if entry.user else 'Неизвестный пользователь' }}</span>
+                        </div>
+                        <a href="{{ url_for('main.document_history_detail', document_id=document.id, history_id=entry.id) }}" 
+                           class="btn btn-outline-danger btn-sm">
+                            Подробнее
+                        </a>
+                    </div>
+                    <p class="mt-2 mb-0 text-truncate" style="max-width: 90%;">
+                        {{ entry.old_text[:150] }}{% if entry.old_text|length > 150 %}...{% endif %}
+                        &rarr; 
+                        {{ entry.new_text[:150] }}{% if entry.new_text|length > 150 %}...{% endif %}
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>История изменений отсутствует.</p>
+    {% endif %}
+
+    <a href="{{ url_for('main.index', document_id=document.id) }}" class="btn btn-danger mt-4">
+        На главную
+    </a>
+</div>
+
+<style>
+/* Ограничение по высоте и скролл для длинных описаний, если нужно */
+.list-group-item p {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>
+{% endblock %}

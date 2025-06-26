@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Детали изменения документа: {{ document.filename }}{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <h1>Детали изменения документа: {{ document.filename }}</h1>
+
+    <p><strong>Дата изменения:</strong> {{ history_entry.changed_at.strftime('%d.%m.%Y %H:%M:%S') }}</p>
+    <p><strong>Пользователь:</strong> {{ history_entry.user.fio if history_entry.user else 'Неизвестный пользователь' }}</p>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Старый текст</h4>
+            <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto;">{{ history_entry.old_text }}</pre>
+        </div>
+        <div class="col-md-6">
+            <h4>Новый текст</h4>
+            <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto;">{{ history_entry.new_text }}</pre>
+        </div>
+    </div>
+
+    <a href="{{ url_for('main.document_history', document_id=document.id) }}" class="btn btn-secondary mt-3">Вернуться к истории изменений</a>
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Профиль{% endblock %}
+{% block body %}
+
+{% if documents %}
+  <div class="list-group">
+    {% for doc in documents %}
+      <div class="list-group-item d-flex justify-content-between align-items-start"
+           style="cursor: pointer;"
+           onclick="if(event.target.tagName !== 'A' && event.target.tagName !== 'BUTTON' && !event.target.closest('a') && !event.target.closest('button')) { window.location='{{ url_for('main.document_detail', document_id=doc.id) }}'; }">
+
+        <!-- Левая часть с текстом -->
+        <div class="doc-text flex-grow-1 me-3" style="min-width: 0;">
+          <h5 class="mb-1 text-truncate">{{ doc.filename }}</h5>
+          <small class="text-muted d-block">{{ doc.date_added.strftime('%d.%m.%Y %H:%M') if doc.date_added else '' }}</small>
+          <p class="mb-1" style="white-space: normal; word-break: break-word;">
+            {{ doc.text[:200] }}{% if doc.text|length > 200 %}...{% endif %}
+          </p>
+          <small>Категория: {{ doc.category.name if doc.category else 'Без категории' }} | Загрузил: {{ doc.user.fio if doc.user else 'Неизвестно' }}</small>
+        </div>
+
+        <!-- Правая часть с кнопками -->
+        <div class="doc-buttons d-flex flex-column align-items-stretch" style="width: 140px; flex-shrink: 0;">
+          <a href="{{ url_for('main.uploaded_file', filename=doc.filename) }}" target="_blank" class="btn btn-outline-dark btn-sm mb-2 text-truncate" style="width: 100%;">
+            Открыть документ
+          </a>
+
+          {% if current_user.role.name == 'admin' %}
+            <a href="{{ url_for('main.edit_document', document_id=doc.id) }}" class="btn btn-secondary btn-sm mb-2 text-truncate" style="width: 100%;">
+              Редактировать
+            </a>
+          {% endif %}
+
+          {% if current_user.role.name == 'admin' or current_user.id == doc.user_id %}
+            <form method="POST" action="{{ url_for('main.delete_document', document_id=doc.id) }}" onsubmit="return confirm('Вы уверены, что хотите удалить этот документ?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-danger btn-sm text-truncate" style="width: 100%;">
+                Удалить
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <p>Документов нет</p>
+{% endif %}
+
+<style>
+  /* Сброс отступов */
+  body, html {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Основной flex-контейнер для элемента списка */
+  .list-group-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  /* Левая часть с текстом */
+  .doc-text {
+    flex-grow: 1;
+    min-width: 0; /* важно для корректного сжатия текста */
+    margin-right: 1rem;
+  }
+
+  /* Обрезка длинных заголовков */
+  .doc-text h5 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Текст описания с переносом */
+  .doc-text p {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  /* Правая часть с кнопками */
+  .doc-buttons {
+    width: 140px; /* фиксированная ширина */
+    flex-shrink: 0; /* не сжимать */
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem; /* расстояние между кнопками */
+  }
+
+  /* Кнопки занимают всю ширину блока */
+  .doc-buttons .btn {
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Стили для пагинации (оставил ваши) */
+  .page-item.page-number .page-link {
+    background-color: #212529;
+    color: #e9ecef;
+    border: 1px solid #343a40;
+  }
+  .page-item.page-number.active .page-link {
+    background-color: #343a40;
+    border-color: #495057;
+    color: #fff;
+  }
+  .page-item.page-number .page-link:hover {
+    background-color: #495057;
+    color: #fff;
+  }
+</style>
+
+{% if documents and total_pages > 1 %}
+<nav aria-label="Navigation" class="my-4">
+  <ul class="pagination justify-content-center">
+    <li class="page-item {% if page == 1 %}disabled{% endif %}">
+      <a class="page-link" href="{{ url_for('main.index', page=page-1) }}" tabindex="-1">Предыдущая</a>
+    </li>
+
+    {% for p in range(1, total_pages + 1) %}
+      <li class="page-item page-number {% if p == page %}active{% endif %}">
+        <a class="page-link" href="{{ url_for('main.index', page=p) }}">{{ p }}</a>
+      </li>
+    {% endfor %}
+
+    <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+      <a class="page-link" href="{{ url_for('main.index', page=page+1) }}">Следующая</a>
+    </li>
+  </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
